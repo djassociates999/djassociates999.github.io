@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST Invoice Generator — Easy Invoice Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --navy: #0A1628;
+  --orange: #FF6B00;
+  --gold: #FFB900;
+  --green: #1A9E4A;
+  --red: #CC2D2D;
+  --white: #FFFFFF;
+  --light: #F4F6FB;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--light);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* PRINT — handled via JS by hiding all body children except temp print div */
+@media print {
+  @page { size: A4; margin: 10mm; }
+}
+
+/* HEADER */
+header {
+  background: var(--navy);
+  padding: 16px 20px;
+  border-bottom: 3px solid var(--orange);
+  text-align: center;
+}
+header h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--white);
+}
+header p {
+  font-size: 12px;
+  color: var(--gold);
+  margin-top: 4px;
+}
+
+/* CONTENT */
+.content { padding: 16px; max-width: 800px; margin: 0 auto; }
+
+/* CARDS */
+.card {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+}
+.card-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* FORM ELEMENTS */
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--white);
+  transition: border-color 0.2s;
+  outline: none;
+}
+.form-group input:focus,
+.form-group select:focus { border-color: var(--orange); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:600px) { .form-row { grid-template-columns: 1fr; } }
+
+/* BUTTONS */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--orange); color: var(--white); }
+.btn-primary:hover { background: #e55a00; transform: translateY(-1px); }
+.btn-navy { background: var(--navy); color: var(--white); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* INVOICE TABLE */
+.invoice-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.invoice-table th {
+  background: var(--navy);
+  color: var(--white);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+}
+.invoice-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.invoice-table tr:hover td { background: #f9fafb; }
+.invoice-table input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  width: 100%;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+}
+.invoice-table select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 4px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+}
+
+/* TOTALS */
+.invoice-totals {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 12px;
+}
+.invoice-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 14px;
+}
+.invoice-total-row.grand {
+  border-top: 2px solid var(--navy);
+  margin-top: 6px;
+  padding-top: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--navy);
+}
+
+/* FOOTER */
+footer {
+  background: var(--navy);
+  color: #aaa;
+  text-align: center;
+  padding: 16px;
+  font-size: 12px;
+  margin-top: 20px;
+}
+footer a { color: var(--gold); text-decoration: none; }
+
+/* WhatsApp Float */
+.wa-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #25D366;
+  color: white;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  z-index: 999;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📄 GST Invoice Generator</h1>
+  <p>Create professional GST invoices instantly — Free to use!</p>
+</header>
+
+<div class="content">
+
+  <div class="card">
+    <div class="card-title">📄 Create Your Invoice</div>
+
+    <!-- Seller Details -->
+    <p style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;">🏢 Your Business Details</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Your Business Name</label>
+        <input type="text" id="inv-seller-name" placeholder="Enter your business name">
+      </div>
+      <div class="form-group">
+        <label>Your GSTIN</label>
+        <input type="text" id="inv-seller-gstin" placeholder="e.g. 36ABCDE1234F1Z5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Your Address</label>
+        <input type="text" id="inv-seller-address" placeholder="Your full business address">
+      </div>
+      <div class="form-group">
+        <label>Your Phone / Email (Optional)</label>
+        <input type="text" id="inv-seller-contact" placeholder="e.g. 9999999999 / abc@email.com">
+      </div>
+    </div>
+
+    <!-- Buyer Details -->
+    <p style="font-size:13px;font-weight:700;color:var(--navy);margin:10px 0;">👤 Buyer Details</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Buyer Name</label>
+        <input type="text" id="inv-buyer-name" placeholder="Buyer name">
+      </div>
+      <div class="form-group">
+        <label>Buyer GSTIN (Optional)</label>
+        <input type="text" id="inv-buyer-gstin" placeholder="If registered">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Buyer Address</label>
+      <input type="text" id="inv-buyer-address" placeholder="Buyer's full address">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Invoice Number</label>
+        <input type="text" id="inv-number" placeholder="e.g. INV/2026/001">
+      </div>
+      <div class="form-group">
+        <label>Invoice Date</label>
+        <input type="date" id="inv-date">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Supply Type</label>
+        <select id="inv-supply">
+          <option value="intra">Intra-State (CGST + SGST)</option>
+          <option value="inter">Inter-State (IGST)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Place of Supply</label>
+        <input type="text" id="inv-pos" placeholder="e.g. Telangana">
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <p style="font-size:13px;font-weight:700;color:var(--navy);margin:10px 0;">📦 Items / Services</p>
+    <div style="overflow-x:auto;">
+      <table class="invoice-table" id="items-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th>HSN/SAC</th>
+            <th>Qty</th>
+            <th>Rate (Rs.)</th>
+            <th>GST%</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="items-body">
+          <tr id="item-row-1">
+            <td>1</td>
+            <td><input type="text" placeholder="Item/Service" id="item-desc-1" oninput="updateTotals()"></td>
+            <td><input type="text" placeholder="HSN" id="item-hsn-1" style="width:70px;"></td>
+            <td><input type="number" value="1" id="item-qty-1" oninput="updateTotals()" style="width:55px;"></td>
+            <td><input type="number" placeholder="0" id="item-rate-1" oninput="updateTotals()" style="width:90px;"></td>
+            <td>
+              <select id="item-gst-1" onchange="updateTotals()" style="width:60px;">
+                <option value="0">0%</option>
+                <option value="5">5%</option>
+                <option value="12">12%</option>
+                <option value="18" selected>18%</option>
+                <option value="28">28%</option>
+              </select>
+            </td>
+            <td id="item-amount-1" style="font-weight:700;">0.00</td>
+            <td><button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;" onclick="removeRow(1)">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-sm btn-navy" onclick="addRow()" style="margin-top:8px;">+ Add Item</button>
+
+    <!-- Totals -->
+    <div class="invoice-totals" id="invoice-totals">
+      <div class="invoice-total-row"><span>Subtotal</span><span id="subtotal">Rs. 0.00</span></div>
+      <div class="invoice-total-row"><span id="tax-label-1">CGST</span><span id="cgst-total">Rs. 0.00</span></div>
+      <div class="invoice-total-row"><span id="tax-label-2">SGST</span><span id="sgst-total">Rs. 0.00</span></div>
+      <div class="invoice-total-row grand"><span>GRAND TOTAL</span><span id="grand-total">Rs. 0.00</span></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="generateInvoice()">👁️ Preview Invoice</button>
+      <button class="btn" style="background:var(--green);color:white;" onclick="saveAsImage()">🖼️ Save as Image</button>
+      <button class="btn btn-navy" onclick="printInvoice()">📄 Download as PDF</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">📱 Both buttons work reliably on mobile and desktop — no print dialog needed!</p>
+  </div>
+
+  <!-- Invoice Preview -->
+  <div id="invoice-preview-section" style="display:none;">
+    <div class="card">
+      <div class="card-title">📄 Invoice Preview</div>
+      <div id="invoice-preview-content"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- WhatsApp Float -->
+<a href="https://wa.me/918790072850" class="wa-float" title="Need help? WhatsApp us">💬</a>
+
+<footer>
+  This free tool is provided by <strong style="color:var(--gold);">DJ Associates</strong> | Tax & GST Consultants, Hyderabad<br>
+  📲 <a href="https://wa.me/918790072850">+91 87900 72850</a> |
+  <a href="https://djassociates999.github.io">djassociates999.github.io</a><br>
+  <span style="font-size:11px;">For reference only. Consult a tax professional before filing returns.</span>
+</footer>
+
+<script>
+let rowCount = 1;
+
+function addRow() {
+  rowCount++;
+  const tbody = document.getElementById('items-body');
+  const tr = document.createElement('tr');
+  tr.id = 'item-row-' + rowCount;
+  tr.innerHTML = `
+    <td>${rowCount}</td>
+    <td><input type="text" placeholder="Item/Service" id="item-desc-${rowCount}" oninput="updateTotals()"></td>
+    <td><input type="text" placeholder="HSN" id="item-hsn-${rowCount}" style="width:70px;"></td>
+    <td><input type="number" value="1" id="item-qty-${rowCount}" oninput="updateTotals()" style="width:55px;"></td>
+    <td><input type="number" placeholder="0" id="item-rate-${rowCount}" oninput="updateTotals()" style="width:90px;"></td>
+    <td><select id="item-gst-${rowCount}" onchange="updateTotals()" style="width:60px;">
+      <option value="0">0%</option><option value="5">5%</option>
+      <option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option>
+    </select></td>
+    <td id="item-amount-${rowCount}" style="font-weight:700;">0.00</td>
+    <td><button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;" onclick="removeRow(${rowCount})">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function removeRow(n) {
+  const row = document.getElementById('item-row-' + n);
+  if (row) row.remove();
+  updateTotals();
+}
+
+function updateTotals() {
+  let subtotal = 0, totalGST = 0;
+  for (let i = 1; i <= rowCount; i++) {
+    const qty = parseFloat(document.getElementById('item-qty-' + i)?.value) || 0;
+    const rate = parseFloat(document.getElementById('item-rate-' + i)?.value) || 0;
+    const gst = parseFloat(document.getElementById('item-gst-' + i)?.value) || 0;
+    const amount = qty * rate;
+    const gstAmt = amount * gst / 100;
+    subtotal += amount;
+    totalGST += gstAmt;
+    if (document.getElementById('item-amount-' + i)) {
+      document.getElementById('item-amount-' + i).textContent = fmt(amount + gstAmt);
+    }
+  }
+  const grand = subtotal + totalGST;
+  const supply = document.getElementById('inv-supply').value;
+  document.getElementById('subtotal').textContent = 'Rs. ' + fmt(subtotal);
+  if (supply === 'intra') {
+    document.getElementById('tax-label-1').textContent = 'CGST';
+    document.getElementById('tax-label-2').textContent = 'SGST';
+    document.getElementById('cgst-total').textContent = 'Rs. ' + fmt(totalGST/2);
+    document.getElementById('sgst-total').textContent = 'Rs. ' + fmt(totalGST/2);
+    document.getElementById('sgst-total').parentElement.style.display = '';
+  } else {
+    document.getElementById('tax-label-1').textContent = 'IGST';
+    document.getElementById('tax-label-2').textContent = '';
+    document.getElementById('cgst-total').textContent = 'Rs. ' + fmt(totalGST);
+    document.getElementById('sgst-total').textContent = '';
+    document.getElementById('sgst-total').parentElement.style.display = 'none';
+  }
+  document.getElementById('grand-total').textContent = 'Rs. ' + fmt(grand);
+}
+
+function generateInvoice() {
+  updateTotals();
+  const supply = document.getElementById('inv-supply').value;
+  let itemsHTML = '';
+  let subtotal = 0, totalGST = 0;
+  for (let i = 1; i <= rowCount; i++) {
+    const desc = document.getElementById('item-desc-' + i)?.value || '';
+    const hsn = document.getElementById('item-hsn-' + i)?.value || '';
+    const qty = parseFloat(document.getElementById('item-qty-' + i)?.value) || 0;
+    const rate = parseFloat(document.getElementById('item-rate-' + i)?.value) || 0;
+    const gst = parseFloat(document.getElementById('item-gst-' + i)?.value) || 0;
+    if (!desc && rate === 0) continue;
+    const amount = qty * rate;
+    const gstAmt = amount * gst / 100;
+    subtotal += amount;
+    totalGST += gstAmt;
+    itemsHTML += `<tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px;">${i}</td>
+      <td style="padding:8px;">${desc}</td>
+      <td style="padding:8px;">${hsn}</td>
+      <td style="padding:8px;text-align:center;">${qty}</td>
+      <td style="padding:8px;text-align:right;">${fmt(rate)}</td>
+      <td style="padding:8px;text-align:right;">${fmt(amount)}</td>
+      <td style="padding:8px;text-align:center;">${gst}%</td>
+      <td style="padding:8px;text-align:right;font-weight:700;">${fmt(amount + gstAmt)}</td>
+    </tr>`;
+  }
+
+  const taxRows = supply === 'intra'
+    ? `<tr><td colspan="6" style="padding:4px;"></td><td style="padding:4px;text-align:right;font-weight:600;">CGST:</td><td style="padding:4px;text-align:right;">Rs. ${fmt(totalGST/2)}</td></tr>
+       <tr><td colspan="6" style="padding:4px;"></td><td style="padding:4px;text-align:right;font-weight:600;">SGST:</td><td style="padding:4px;text-align:right;">Rs. ${fmt(totalGST/2)}</td></tr>`
+    : `<tr><td colspan="6" style="padding:4px;"></td><td style="padding:4px;text-align:right;font-weight:600;">IGST:</td><td style="padding:4px;text-align:right;">Rs. ${fmt(totalGST)}</td></tr>`;
+
+  const sellerName = document.getElementById('inv-seller-name').value || 'Your Business Name';
+  const sellerAddress = document.getElementById('inv-seller-address').value || '';
+  const sellerGSTIN = document.getElementById('inv-seller-gstin').value || 'N/A';
+  const sellerContact = document.getElementById('inv-seller-contact').value || '';
+
+  const preview = `
+    <div style="font-family:Arial,sans-serif;font-size:12px;">
+      <!-- Invoice Header — Seller Info only -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:2px solid #0A1628;margin-bottom:10px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#0A1628;">${sellerName}</div>
+          <div style="color:#666;margin-top:2px;">${sellerAddress}</div>
+          ${sellerContact ? `<div style="color:#666;">📞 ${sellerContact}</div>` : ''}
+          <div style="margin-top:2px;">GSTIN: <strong>${sellerGSTIN}</strong></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px;font-weight:700;color:#FF6B00;">TAX INVOICE</div>
+          <div style="margin-top:2px;">Invoice No: <strong>${document.getElementById('inv-number').value || '-'}</strong></div>
+          <div>Date: <strong>${fmtDate(document.getElementById('inv-date').value)}</strong></div>
+          <div>Place of Supply: <strong>${document.getElementById('inv-pos').value || '-'}</strong></div>
+        </div>
+      </div>
+
+      <!-- Bill To -->
+      <div style="background:#f9fafb;padding:8px;border-radius:6px;margin-bottom:10px;border-left:4px solid #0A1628;">
+        <div style="font-weight:700;margin-bottom:2px;color:#0A1628;">Bill To:</div>
+        <div style="font-size:14px;font-weight:700;">${document.getElementById('inv-buyer-name').value || '-'}</div>
+        ${document.getElementById('inv-buyer-address').value ? `<div style="color:#666;">${document.getElementById('inv-buyer-address').value}</div>` : ''}
+        ${document.getElementById('inv-buyer-gstin').value ? `<div>GSTIN: <strong>${document.getElementById('inv-buyer-gstin').value}</strong></div>` : ''}
+      </div>
+
+      <!-- Items Table -->
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead style="background:#0A1628;color:white;">
+          <tr>
+            <th style="padding:5px;text-align:left;">#</th>
+            <th style="padding:5px;text-align:left;">Description</th>
+            <th style="padding:5px;text-align:left;">HSN/SAC</th>
+            <th style="padding:5px;text-align:center;">Qty</th>
+            <th style="padding:5px;text-align:right;">Rate (Rs.)</th>
+            <th style="padding:5px;text-align:right;">Amount (Rs.)</th>
+            <th style="padding:5px;text-align:center;">GST%</th>
+            <th style="padding:5px;text-align:right;">Total (Rs.)</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHTML}</tbody>
+        <tfoot>
+          <tr><td colspan="6" style="padding:4px;"></td><td style="padding:4px;text-align:right;font-weight:600;">Subtotal:</td><td style="padding:4px;text-align:right;">Rs. ${fmt(subtotal)}</td></tr>
+          ${taxRows}
+          <tr style="background:#0A1628;color:white;">
+            <td colspan="6"></td>
+            <td style="padding:7px;text-align:right;font-weight:700;font-size:13px;">GRAND TOTAL:</td>
+            <td style="padding:7px;text-align:right;font-weight:700;font-size:13px;">Rs. ${fmt(subtotal + totalGST)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Terms -->
+      <div style="margin-top:10px;font-size:11px;color:#555;">
+        <strong>Terms & Conditions:</strong> Payment due within 30 days. Subject to local jurisdiction.
+      </div>
+
+      <!-- Signature -->
+      <div style="display:flex;justify-content:space-between;margin-top:20px;font-size:11px;">
+        <div></div>
+        <div style="text-align:center;">
+          <div style="border-top:1px solid #333;padding-top:4px;width:140px;">Authorised Signatory</div>
+          <div style="font-weight:700;margin-top:2px;">${sellerName}</div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('invoice-preview-content').innerHTML = preview;
+  document.getElementById('invoice-preview-section').style.display = 'block';
+  document.getElementById('invoice-preview-section').scrollIntoView({behavior:'smooth'});
+}
+
+function saveAsImage() {
+  generateInvoice();
+  const invNum = (document.getElementById('inv-number').value || 'Invoice').replace(/[^a-zA-Z0-9-_]/g, '_');
+
+  // Create a clean white container for rendering
+  const renderDiv = document.createElement('div');
+  renderDiv.style.cssText = 'position:fixed;top:0;left:0;background:white;padding:20px;width:750px;z-index:-1;font-family:Arial,sans-serif;';
+  renderDiv.innerHTML = document.getElementById('invoice-preview-content').innerHTML;
+  document.body.appendChild(renderDiv);
+
+  // Show loading state
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    html2canvas(renderDiv, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = invNum + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      renderDiv.remove();
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }).catch(err => {
+      alert('Could not generate image. Please try the Print/Download PDF option instead.');
+      renderDiv.remove();
+      btn.textContent = originalText;
+      btn.disabled = false;
+    });
+  }, 200);
+}
+
+function printInvoice() {
+  generateInvoice();
+  const invNum = (document.getElementById('inv-number').value || 'Invoice').replace(/[^a-zA-Z0-9-_]/g, '_');
+
+  // Create a clean white container for rendering (same approach as Save as Image)
+  const renderDiv = document.createElement('div');
+  renderDiv.style.cssText = 'position:fixed;top:0;left:0;background:white;padding:20px;width:750px;z-index:-1;font-family:Arial,sans-serif;';
+  renderDiv.innerHTML = document.getElementById('invoice-preview-content').innerHTML;
+  document.body.appendChild(renderDiv);
+
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Generating PDF...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    html2canvas(renderDiv, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(invNum + '.pdf');
+      renderDiv.remove();
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }).catch(err => {
+      alert('Could not generate PDF. Please try "Save as Image" instead.');
+      renderDiv.remove();
+      btn.textContent = originalText;
+      btn.disabled = false;
+    });
+  }, 200);
+}
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-'); // yyyy-mm-dd
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-yyyy
+}
+
+document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
+
+ 
