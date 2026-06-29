@@ -467,24 +467,8 @@
   </div>
 </header>
 
-<!-- SETUP PANEL -->
-<div id="setup-panel">
-  <div class="setup-card">
-    <h2>ITR Filing Assistant</h2>
-    <p>Your AI-powered guide for filing ITR for <strong>Financial Year 2025-26 (Tax Year 2026-27)</strong>. Enter your Cloudflare Worker proxy URL to activate.</p>
-    <div class="input-group">
-      <label>Cloudflare Worker Proxy URL</label>
-      <div class="api-input-wrap">
-        <input type="text" id="proxy-url-input" placeholder="https://your-worker.workers.dev" autocomplete="off" />
-        <button class="btn-primary" onclick="activateAssistant()">Activate</button>
-      </div>
-    </div>
-    <p class="setup-note">
-      Your Anthropic API key stays safely hidden inside your Cloudflare Worker — clients never see it.<br>
-      Need help setting this up? Contact <a href="mailto:djassociates999@gmail.com">djassociates999@gmail.com</a>
-    </p>
-  </div>
-</div>
+<!-- SETUP PANEL (auto-activates) -->
+<div id="setup-panel" class="hidden"></div>
 
 <!-- CHAT AREA -->
 <div id="chat-area" class="hidden"></div>
@@ -568,20 +552,8 @@ TONE AND STYLE:
 You are helpful, professional, and knowledgeable. Answer in plain English that a layperson can understand.`;
 
   function activateAssistant() {
-    const urlInput = document.getElementById('proxy-url-input');
-    const url = urlInput.value.trim().replace(/\/$/, '');
-
-    if (!url || !url.startsWith('https://')) {
-      urlInput.style.borderColor = '#dc2626';
-      urlInput.placeholder = 'Invalid URL — must start with https://';
-      setTimeout(() => {
-        urlInput.style.borderColor = '';
-        urlInput.placeholder = 'https://your-worker.workers.dev';
-      }, 2500);
-      return;
-    }
-
-    proxyUrl = url;
+    // Hardcoded Worker URL — clients open and chat directly
+    proxyUrl = 'https://itr-assistant-proxy.djassociates999.workers.dev';
 
     // Update UI
     document.getElementById('setup-panel').classList.add('hidden');
@@ -772,13 +744,8 @@ You are helpful, professional, and knowledgeable. Answer in plain English that a
       });
     }
 
-    // Also allow Enter on proxy URL field
-    const proxyInput = document.getElementById('proxy-url-input');
-    if (proxyInput) {
-      proxyInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') activateAssistant();
-      });
-    }
+    // Auto-activate on page load (URL hardcoded)
+    activateAssistant();
   });
 </script>
 </body>
