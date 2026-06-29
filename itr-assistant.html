@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITR Filing Assistant FY 2025-26 – DJ Associates</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0A1F44;
+    --navy-light: #1e3a5f;
+    --gold: #C9A84C;
+    --gold-light: #e8c96a;
+    --teal: #0f8b8d;
+    --teal-light: #13b5b7;
+    --white: #ffffff;
+    --bg: #f4f6fa;
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --border: #dde3ed;
+    --user-bubble: #0A1F44;
+    --ai-bubble: #ffffff;
+    --error: #dc2626;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-mark {
+    width: 42px;
+    height: 42px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--white);
+    line-height: 1.2;
+  }
+
+  .header-text p {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #a0aec0;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4a5568;
+  }
+
+  .dot.active { background: #48bb78; box-shadow: 0 0 6px #48bb78; }
+
+  /* ── API KEY SETUP ── */
+  #setup-panel {
+    max-width: 480px;
+    margin: 40px auto 20px;
+    padding: 0 16px;
+  }
+
+  .setup-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 24px rgba(10,31,68,0.10);
+    border: 1px solid var(--border);
+  }
+
+  .setup-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+
+  .setup-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .api-input-wrap {
+    display: flex;
+    gap: 8px;
+  }
+
+  .api-input-wrap input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: monospace;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input-wrap input:focus { border-color: var(--teal); }
+
+  .btn-primary {
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { background: var(--navy-light); }
+
+  .setup-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .setup-note a { color: var(--teal); text-decoration: none; }
+
+  /* ── SUGGESTIONS ── */
+  #suggestions {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 16px 12px;
+  }
+
+  .suggest-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .suggest-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .chip:hover {
+    border-color: var(--gold);
+    background: #fffbf0;
+    color: var(--navy);
+  }
+
+  /* ── CHAT ── */
+  #chat-area {
+    flex: 1;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+    gap: 4px;
+    animation: fadeUp 0.25s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { align-self: flex-end; align-items: flex-end; }
+  .message.ai   { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .message.user .bubble {
+    background: var(--user-bubble);
+    color: var(--white);
+    border-bottom-right-radius: 4px;
+  }
+
+  .message.ai .bubble {
+    background: var(--ai-bubble);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(10,31,68,0.07);
+  }
+
+  .message.ai .bubble.error {
+    border-color: #fca5a5;
+    background: #fff5f5;
+    color: var(--error);
+  }
+
+  .ai-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 4px;
+  }
+
+  .ai-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+  }
+
+  /* Typing indicator */
+  .typing-bubble {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 14px 18px;
+  }
+
+  .typing-bubble span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30%            { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Formatted AI response */
+  .bubble strong { color: var(--navy); font-weight: 600; }
+  .bubble em { font-style: italic; color: var(--text-muted); }
+  .bubble ul, .bubble ol { padding-left: 18px; margin: 6px 0; }
+  .bubble li { margin-bottom: 3px; }
+  .bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .bubble .tag {
+    display: inline-block;
+    background: #e8f4f8;
+    color: var(--teal);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+
+  /* ── INPUT BAR ── */
+  #input-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .input-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  #user-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    resize: none;
+    outline: none;
+    background: var(--white);
+    color: var(--text);
+    max-height: 120px;
+    min-height: 46px;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+
+  #user-input:focus { border-color: var(--navy); }
+  #user-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #send-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--gold);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+
+  #send-btn:hover { background: var(--gold-light); }
+  #send-btn:active { transform: scale(0.95); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #send-btn svg { width: 20px; height: 20px; fill: var(--navy); }
+
+  .input-footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  /* ── WELCOME ── */
+  .welcome-card {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: 16px;
+    padding: 24px 20px;
+    color: var(--white);
+    text-align: center;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .welcome-card .icon { font-size: 36px; margin-bottom: 10px; }
+
+  .welcome-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--gold);
+  }
+
+  .welcome-card p {
+    font-size: 13px;
+    color: #a0b4cc;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .welcome-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  .topic-tag {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Scrollbar */
+  #chat-area::-webkit-scrollbar { width: 4px; }
+  #chat-area::-webkit-scrollbar-track { background: transparent; }
+  #chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-mark">DJ</div>
+  <div class="header-text">
+    <h1>ITR Filing Assistant</h1>
+    <p>FY 2025-26 · TY 2026-27 · DJ Associates</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Offline</span>
+  </div>
+</header>
+
+<!-- SETUP PANEL -->
+<div id="setup-panel">
+  <div class="setup-card">
+    <h2>ITR Filing Assistant</h2>
+    <p>Your AI-powered guide for filing ITR for <strong>Financial Year 2025-26 (Tax Year 2026-27)</strong>. Enter your Cloudflare Worker proxy URL to activate.</p>
+    <div class="input-group">
+      <label>Cloudflare Worker Proxy URL</label>
+      <div class="api-input-wrap">
+        <input type="text" id="proxy-url-input" placeholder="https://your-worker.workers.dev" autocomplete="off" />
+        <button class="btn-primary" onclick="activateAssistant()">Activate</button>
+      </div>
+    </div>
+    <p class="setup-note">
+      Your Anthropic API key stays safely hidden inside your Cloudflare Worker — clients never see it.<br>
+      Need help setting this up? Contact <a href="mailto:djassociates999@gmail.com">djassociates999@gmail.com</a>
+    </p>
+  </div>
+</div>
+
+<!-- CHAT AREA -->
+<div id="chat-area" class="hidden"></div>
+
+<!-- SUGGESTIONS -->
+<div id="suggestions" class="hidden">
+  <p class="suggest-label">Ask me about</p>
+  <div class="suggest-chips">
+    <span class="chip" onclick="sendSuggestion(this)">Which ITR form should I file?</span>
+    <span class="chip" onclick="sendSuggestion(this)">New vs Old tax regime 2025-26</span>
+    <span class="chip" onclick="sendSuggestion(this)">80C deduction limit</span>
+    <span class="chip" onclick="sendSuggestion(this)">HRA exemption calculation</span>
+    <span class="chip" onclick="sendSuggestion(this)">ITR filing deadline July 2026</span>
+    <span class="chip" onclick="sendSuggestion(this)">Capital gains tax on mutual funds</span>
+    <span class="chip" onclick="sendSuggestion(this)">What is Form 130?</span>
+    <span class="chip" onclick="sendSuggestion(this)">AIS vs Form 26AS difference</span>
+  </div>
+</div>
+
+<!-- INPUT BAR -->
+<div id="input-bar" class="hidden">
+  <div class="input-wrap">
+    <textarea id="user-input" placeholder="Ask about ITR filing for FY 2025-26 / TY 2026-27..." rows="1" disabled></textarea>
+    <button id="send-btn" disabled onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+  <p class="input-footer">AI responses are for guidance only. Consult DJ Associates for personalised tax advice.</p>
+</div>
+
+<script>
+  let proxyUrl = '';
+  let conversationHistory = [];
+  let isLoading = false;
+
+  const SYSTEM_PROMPT = `You are an expert ITR (Income Tax Return) Filing Assistant for DJ Associates, a Tax & GST Consultancy in Hyderabad, India. You are run by Dixit, a semi-qualified CA with 35+ years of tax experience.
+
+Your role is to help clients and users with:
+1. ITR form selection (ITR-1 Sahaj, ITR-2, ITR-3, ITR-4 Sugam, ITR-5, ITR-6, ITR-7)
+2. Income Tax deductions under Chapter VI-A (80C, 80D, 80E, 80G, 80TTA, 80TTB, etc.)
+3. New Tax Regime vs Old Tax Regime comparison and recommendation
+4. HRA exemption calculation
+5. Capital gains tax (short-term and long-term) on equities, mutual funds, property
+6. AIS (Annual Information Statement) and TIS (Tax Information Summary) understanding
+7. Form 130 (replaced Form 16 from Tax Year 2026-27 onwards; Form 16 still valid up to TY 2025-26)
+8. ITR filing deadlines — for FY 2025-26 (AY 2026-27), the due date is 31 July 2026 for individuals
+9. Income Tax Act 2025 (replaced the Income Tax Act 1961 effective April 2026)
+10. TDS, advance tax, self-assessment tax
+11. Presumptive taxation under Section 44AD, 44ADA, 44AE
+12. Agricultural income treatment
+13. Set-off and carry-forward of losses
+14. GST registration requirements for businesses/professionals
+
+KEY FACTS TO REMEMBER:
+- Current AY: 2026-27 (FY 2025-26)
+- ITR filing deadline for individuals (non-audit): 31 July 2026
+- Income Tax Act 2025 is the current governing act (not 1961)
+- Form 130 replaced Form 16 from Tax Year 2026-27 (Form 16 still used up to TY 2025-26)
+- New regime is now the default; taxpayers must opt-in for old regime
+- Basic exemption: ₹4 lakh (new regime), ₹2.5 lakh (old regime)
+- NEW REGIME SLABS FY 2025-26: ₹0-4L=Nil, ₹4-8L=5%, ₹8-12L=10%, ₹12-16L=15%, ₹16-20L=20%, ₹20-24L=25%, above ₹24L=30%
+- OLD REGIME SLABS FY 2025-26: ₹0-2.5L=Nil, ₹2.5-5L=5%, ₹5-10L=20%, above ₹10L=30%
+- Rebate u/s 87A NEW regime: up to ₹12 lakh = zero tax (rebate ₹60,000); salaried up to ₹12.75L = zero tax after standard deduction
+- Rebate u/s 87A OLD regime: up to ₹5 lakh = zero tax (rebate ₹12,500)
+- Standard deduction: ₹75,000 (new regime), ₹50,000 (old regime)
+- 80C limit: ₹1.5 lakh (old regime only — not available in new regime)
+- LTCG on equity/equity MF: 12.5% above ₹1.25 lakh (changed in Budget 2024)
+- STCG on equity/equity MF: 20% (changed in Budget 2024)
+- Debt MF LTCG: taxed as per slab rate (no indexation from April 2023)
+
+TONE AND STYLE:
+- Be clear, concise, and practical
+- Use Indian Rupee (₹) symbol
+- Give examples with numbers where helpful
+- Always clarify if the answer differs between new and old tax regimes
+- End complex answers with: "For personalised advice, contact DJ Associates at +91 87900 72850 or djassociates999@gmail.com"
+- Do not give definitive legal opinions — always add appropriate disclaimers for complex situations
+
+You are helpful, professional, and knowledgeable. Answer in plain English that a layperson can understand.`;
+
+  function activateAssistant() {
+    const urlInput = document.getElementById('proxy-url-input');
+    const url = urlInput.value.trim().replace(/\/$/, '');
+
+    if (!url || !url.startsWith('https://')) {
+      urlInput.style.borderColor = '#dc2626';
+      urlInput.placeholder = 'Invalid URL — must start with https://';
+      setTimeout(() => {
+        urlInput.style.borderColor = '';
+        urlInput.placeholder = 'https://your-worker.workers.dev';
+      }, 2500);
+      return;
+    }
+
+    proxyUrl = url;
+
+    // Update UI
+    document.getElementById('setup-panel').classList.add('hidden');
+    document.getElementById('chat-area').classList.remove('hidden');
+    document.getElementById('suggestions').classList.remove('hidden');
+    document.getElementById('input-bar').classList.remove('hidden');
+    document.getElementById('user-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+
+    // Status active
+    document.getElementById('status-dot').classList.add('active');
+    document.getElementById('status-text').textContent = 'Active';
+
+    // Show welcome
+    showWelcome();
+
+    // Focus input
+    document.getElementById('user-input').focus();
+  }
+
+  function showWelcome() {
+    const chatArea = document.getElementById('chat-area');
+    const welcomeDiv = document.createElement('div');
+    welcomeDiv.innerHTML = `
+      <div class="welcome-card">
+        <div class="icon">📋</div>
+        <h2>ITR Filing Assistant</h2>
+        <p style="font-size:12px;background:rgba(201,168,76,0.18);color:#e8c96a;border-radius:8px;padding:6px 12px;display:inline-block;margin-bottom:10px;font-weight:600;letter-spacing:0.3px;">
+          Financial Year 2025-26 &nbsp;·&nbsp; Tax Year 2026-27 &nbsp;·&nbsp; Due Date: 31 July 2026
+        </p>
+        <p>Ask me anything about ITR forms, deductions, tax regimes, capital gains, and compliance. I'm trained specifically for the current filing season.</p>
+        <div class="welcome-topics">
+          <span class="topic-tag">ITR Forms</span>
+          <span class="topic-tag">Section 80C</span>
+          <span class="topic-tag">HRA Exemption</span>
+          <span class="topic-tag">Capital Gains</span>
+          <span class="topic-tag">New vs Old Regime</span>
+          <span class="topic-tag">Form 130</span>
+          <span class="topic-tag">AIS / TIS</span>
+          <span class="topic-tag">July 31 Deadline</span>
+        </div>
+      </div>
+    `;
+    chatArea.appendChild(welcomeDiv);
+  }
+
+  function sendSuggestion(el) {
+    const text = el.textContent;
+    document.getElementById('user-input').value = text;
+    sendMessage();
+  }
+
+  function addMessage(role, content, isError = false) {
+    const chatArea = document.getElementById('chat-area');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${role}`;
+
+    if (role === 'ai') {
+      msgDiv.innerHTML = `
+        <div class="ai-label">ITR Assistant</div>
+        <div class="bubble ${isError ? 'error' : ''}">${formatResponse(content)}</div>
+      `;
+    } else {
+      msgDiv.innerHTML = `<div class="bubble">${escapeHtml(content)}</div>`;
+    }
+
+    chatArea.appendChild(msgDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    return msgDiv;
+  }
+
+  function showTyping() {
+    const chatArea = document.getElementById('chat-area');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+      <div class="ai-label">ITR Assistant</div>
+      <div class="bubble">
+        <div class="typing-bubble">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    chatArea.appendChild(typingDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing-indicator');
+    if (t) t.remove();
+  }
+
+  function formatResponse(text) {
+    // Convert markdown-like to HTML
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^### (.*$)/gm, '<strong style="font-size:15px;color:#0A1F44">$1</strong>')
+      .replace(/^## (.*$)/gm, '<strong style="font-size:15px;color:#0A1F44">$1</strong>')
+      .replace(/^# (.*$)/gm, '<strong style="font-size:16px;color:#0A1F44">$1</strong>')
+      .replace(/^- (.*$)/gm, '<li>$1</li>')
+      .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+      .replace(/`(.*?)`/g, '<code style="background:#f0f4f8;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:13px">$1</code>');
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function sendMessage() {
+    if (isLoading) return;
+
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    isLoading = true;
+    document.getElementById('send-btn').disabled = true;
+    input.disabled = true;
+
+    // Add user message
+    addMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    // Show typing
+    showTyping();
+
+    try {
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: conversationHistory
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'API request failed');
+      }
+
+      const aiReply = data.content[0].text;
+      conversationHistory.push({ role: 'assistant', content: aiReply });
+
+      removeTyping();
+      addMessage('ai', aiReply);
+
+    } catch (err) {
+      removeTyping();
+      let errMsg = 'Sorry, something went wrong. Please check your API key and try again.';
+      if (err.message.includes('401')) errMsg = 'Invalid API key. Please refresh and enter a valid key.';
+      if (err.message.includes('429')) errMsg = 'Rate limit reached. Please wait a moment and try again.';
+      if (err.message.includes('529')) errMsg = 'Claude is overloaded right now. Please try again shortly.';
+      addMessage('ai', errMsg, true);
+    }
+
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+    input.disabled = false;
+    input.focus();
+  }
+
+  // Auto-resize textarea
+  document.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('user-input');
+    if (ta) {
+      ta.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+      ta.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
+
+    // Also allow Enter on proxy URL field
+    const proxyInput = document.getElementById('proxy-url-input');
+    if (proxyInput) {
+      proxyInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') activateAssistant();
+      });
+    }
+  });
+</script>
+</body>
+</html>
+
+ 
